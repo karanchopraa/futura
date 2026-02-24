@@ -1,0 +1,14 @@
+.git
+node_modules
+Frontend
+Smart Contracts
+npm-debug.log
+README.md
+dist
+Backend/.env
+Backend/dev.db
+Backend/dev.db-journal
+Backend/test.db
+.dockerignore
+render.yaml
+docker-compose.yml
