@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: futura-backend
+    env: docker
+    dockerfilePath: Backend/Dockerfile
+    dockerContext: Backend
+    region: oregon 
+    plan: starter 
+    disk:
+      name: sqlite-data
+      mountPath: /app/prisma
+      sizeGB: 1
+    healthCheckPath: /
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 4000
+      - key: DATABASE_URL
+        value: file:./dev.db
+      # Add these in the Render Dashboard after connecting the repo!
+      - key: RPC_URL
+        sync: false
+      - key: FACTORY_ADDRESS
+        sync: false
+      - key: TOKEN_ADDRESS
+        sync: false
