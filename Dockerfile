@@ -13,10 +13,12 @@ RUN npm install
 COPY Backend/ ./
 
 # Generate Prisma client
+ENV DATABASE_URL="file:./dev.db"
+ENV PORT=4000
 RUN npx prisma generate
 
-# Build the TypeScript code (if applicable - currently we use ts-node)
-# RUN npm run build
+# Build the TypeScript code
+RUN npm run build
 
 # Expose the port the app runs on
 EXPOSE 4000
