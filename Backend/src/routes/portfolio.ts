@@ -10,7 +10,7 @@ router.get("/:address", async (req: Request, res: Response) => {
         const { address } = req.params;
 
         const positions = await prisma.position.findMany({
-            where: { userAddress: address.toLowerCase() },
+            where: { userAddress: String(address).toLowerCase() },
             include: {
                 market: {
                     select: {
@@ -67,7 +67,7 @@ router.get("/:address/history", async (req: Request, res: Response) => {
         const { address } = req.params;
 
         const trades = await prisma.trade.findMany({
-            where: { userAddress: address.toLowerCase() },
+            where: { userAddress: String(address).toLowerCase() },
             include: {
                 market: {
                     select: { question: true, address: true },
@@ -89,7 +89,7 @@ router.get("/:address/claimable", async (req: Request, res: Response) => {
         const { address } = req.params;
 
         const positions = await prisma.position.findMany({
-            where: { userAddress: address.toLowerCase() },
+            where: { userAddress: String(address).toLowerCase() },
             include: {
                 market: true,
             },
