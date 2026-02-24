@@ -17,7 +17,7 @@ services:
       - key: PORT
         value: 4000
       - key: DATABASE_URL
-        value: file:./dev.db
+        value: file:/app/prisma/dev.db
       # Add these in the Render Dashboard after connecting the repo!
       - key: RPC_URL
         sync: false
