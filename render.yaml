@@ -2,7 +2,6 @@ services:
   - type: web
     name: futura-backend
     env: docker
-    dockerfilePath: Backend/Dockerfile
     dockerContext: Backend
     region: oregon 
     plan: starter 
