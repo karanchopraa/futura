@@ -4,7 +4,10 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "compile": "npx hardhat compile",
+    "deploy": "npx hardhat run scripts/deploy.ts --network qubetics",
+    "update": "npx hardhat run scripts/update.ts --network qubetics",
+    "test": "npx hardhat test"
   },
   "keywords": [],
   "author": "",
