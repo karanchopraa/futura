@@ -1,9 +1,9 @@
-FROM node:20-alpine
+FROM node:20-bookworm-slim
 
 WORKDIR /app
 
-# Install python and build tools for Prisma/bcrypt native dependencies if needed
-RUN apk add --no-cache python3 make g++ 
+# Install openssl for Prisma query engine
+RUN apt-get update && apt-get install -y openssl libssl-dev && rm -rf /var/lib/apt/lists/*
 
 COPY package.json package-lock.json* ./
 
