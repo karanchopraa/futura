@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { createChart, ColorType, LineSeries, Time } from "lightweight-charts";
+import { createChart, ColorType, AreaSeries, Time } from "lightweight-charts";
 
 interface LightweightChartProps {
     data: { time: Time; value: number }[];
@@ -39,8 +39,29 @@ export default function LightweightChart({ data, color }: LightweightChartProps)
             handleScale: false,
         });
 
-        const lineSeries = chart.addSeries(LineSeries, {
-            color: color,
+        const getAlphaColor = (val: string, alpha: number) => {
+            if (val.startsWith('rgba')) {
+                // e.g. "rgba(41, 98, 255, 1)" -> "rgba(41, 98, 255, 0.4)"
+                return val.replace(/,[\s]*[\d\.]+\)$/, `, ${alpha})`);
+            }
+            if (val.startsWith('rgb')) {
+                // e.g. "rgb(41, 98, 255)" -> "rgba(41, 98, 255, 0.4)"
+                return val.replace('rgb', 'rgba').replace(')', `, ${alpha})`);
+            }
+            if (val.startsWith('#')) {
+                const hex = val.replace('#', '');
+                const r = parseInt(hex.substring(0, 2), 16);
+                const g = parseInt(hex.substring(2, 4), 16);
+                const b = parseInt(hex.substring(4, 6), 16);
+                return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+            }
+            return `rgba(41, 98, 255, ${alpha})`;
+        };
+
+        const areaSeries = chart.addSeries(AreaSeries, {
+            lineColor: color,
+            topColor: getAlphaColor(color, 0.4),
+            bottomColor: getAlphaColor(color, 0.0),
             lineWidth: 3,
             crosshairMarkerVisible: false,
         });
@@ -56,7 +77,7 @@ export default function LightweightChart({ data, color }: LightweightChartProps)
             })
             .sort((a, b) => ((a.time as number) < (b.time as number) ? -1 : (a.time as number) > (b.time as number) ? 1 : 0));
 
-        lineSeries.setData(cleanData);
+        areaSeries.setData(cleanData);
 
         const handleResize = () => {
             chart.applyOptions({ width: chartContainerRef.current?.clientWidth });

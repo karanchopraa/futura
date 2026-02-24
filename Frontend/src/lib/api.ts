@@ -16,6 +16,7 @@ export interface Market {
     tradingFee: number;
     createdAt: string;
     priceHistory?: PricePoint[];
+    tradersCount?: number;
 }
 
 export interface PricePoint {

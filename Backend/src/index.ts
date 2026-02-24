@@ -1,6 +1,9 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import helmet from "helmet";
+import compression from "compression";
+import rateLimit from "express-rate-limit";
 import marketsRouter from "./routes/markets";
 import portfolioRouter from "./routes/portfolio";
 import tradesRouter from "./routes/trades";
@@ -10,6 +13,20 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 4000;
+
+// Security and Performance Middleware
+app.use(helmet());
+app.use(compression());
+
+// Rate Limiting
+const limiter = rateLimit({
+    windowMs: 5 * 60 * 1000, // 5 minutes
+    limit: 200, // Limit each IP to 200 requests per 5 minutes
+    standardHeaders: 'draft-7',
+    legacyHeaders: false,
+    message: { error: "Too many requests, please try again later." }
+});
+app.use("/api/", limiter);
 
 // Middleware
 app.use(cors());

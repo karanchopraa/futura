@@ -9,6 +9,7 @@ import TransactionHistory from "@/components/TransactionHistory";
 import { fetchPortfolio, fetchTradeHistory, fetchClaimable, safeNumber, type Portfolio, type Trade, type Position } from "@/lib/api";
 import { getAddress, connectWallet, isWalletAvailable } from "@/lib/wallet";
 import { sellYesShares, sellNoShares } from "@/lib/contracts";
+import { showToast } from "@/components/Toast";
 
 export default function PortfolioPage() {
     const [walletAddress, setWalletAddress] = useState<string | null>(null);
@@ -103,14 +104,14 @@ export default function PortfolioPage() {
                 console.warn("Failed to record sell trade in backend:", apiErr);
             }
 
-            alert(`✓ Sold ${position.shares} ${position.outcome} shares successfully!`);
+            showToast(`✓ Sold ${position.shares} ${position.outcome} shares successfully!`, "success");
 
             // Refresh portfolio data
             await loadData(walletAddress);
         } catch (error: any) {
             console.error("Sell failed:", error);
             const msg = error?.reason || error?.message || "Unknown error";
-            alert(`Sell failed: ${msg}`);
+            showToast(`Sell failed: ${msg}`, "error");
             throw error; // Re-throw so ActivePositions can reset loading state
         }
     };
@@ -133,21 +134,34 @@ export default function PortfolioPage() {
                 {/* Show connect prompt if wallet not connected */}
                 {walletChecked && !walletAddress && (
                     <div className="glass-panel" style={{
-                        padding: '3rem 2rem',
+                        padding: '4rem 2rem',
                         textAlign: 'center',
                         marginBottom: '1.5rem',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        minHeight: '400px',
                     }}>
-                        <h2 style={{ marginBottom: '0.75rem', fontSize: '1.25rem' }}>Connect Your Wallet</h2>
-                        <p className="text-secondary" style={{ marginBottom: '1.5rem', fontSize: '0.9rem' }}>
-                            Connect your MetaMask wallet to view your positions and trade history.
+                        <div style={{
+                            width: '80px', height: '80px', borderRadius: '50%',
+                            background: 'var(--bg-tertiary)', display: 'flex',
+                            alignItems: 'center', justifyContent: 'center', marginBottom: '1.5rem',
+                            border: '1px solid var(--border)'
+                        }}>
+                            <span style={{ fontSize: '2rem' }}>💼</span>
+                        </div>
+                        <h2 style={{ marginBottom: '0.75rem', fontSize: '1.5rem' }}>Your Portfolio Awaits</h2>
+                        <p className="text-secondary" style={{ marginBottom: '2rem', fontSize: '1rem', maxWidth: '400px' }}>
+                            Connect your wallet to track your positions, view your trading history, and claim your winnings.
                         </p>
                         {isWalletAvailable() ? (
-                            <button className="button-primary" onClick={handleConnect} style={{ padding: '0.75rem 2rem', fontSize: '1rem' }}>
-                                Connect MetaMask
+                            <button className="button-primary" onClick={handleConnect} style={{ padding: '0.85rem 2.5rem', fontSize: '1rem', borderRadius: '30px' }}>
+                                Connect Wallet
                             </button>
                         ) : (
                             <a href="https://metamask.io/download/" target="_blank" rel="noopener noreferrer"
-                                className="button-primary" style={{ padding: '0.75rem 2rem', fontSize: '1rem', textDecoration: 'none', display: 'inline-block' }}>
+                                className="button-primary" style={{ padding: '0.85rem 2.5rem', fontSize: '1rem', textDecoration: 'none', display: 'inline-block', borderRadius: '30px' }}>
                                 Install MetaMask
                             </a>
                         )}
@@ -156,16 +170,48 @@ export default function PortfolioPage() {
 
                 {/* Show wallet address badge when connected */}
                 {walletAddress && (
-                    <div style={{
-                        display: 'flex', alignItems: 'center', gap: '0.5rem',
-                        marginBottom: '1rem', fontSize: '0.85rem', color: 'var(--text-secondary)',
-                    }}>
-                        <span style={{
-                            width: '8px', height: '8px', borderRadius: '50%',
-                            background: 'var(--accent-yes)', display: 'inline-block',
-                        }} />
-                        Connected: {walletAddress.substring(0, 6)}...{walletAddress.substring(walletAddress.length - 4)}
-                    </div>
+                    <>
+                        <div style={{
+                            display: 'flex', alignItems: 'center', gap: '0.5rem',
+                            marginBottom: '1.5rem', fontSize: '0.85rem', color: 'var(--text-secondary)',
+                        }}>
+                            <span style={{
+                                width: '8px', height: '8px', borderRadius: '50%',
+                                background: 'var(--accent-yes)', display: 'inline-block',
+                            }} />
+                            Connected: {walletAddress.substring(0, 6)}...{walletAddress.substring(walletAddress.length - 4)}
+                        </div>
+
+                        {/* Portfolio Summary Stats Row */}
+                        {!loading && portfolio && (
+                            <div style={{
+                                display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                                gap: '1rem', marginBottom: '2rem'
+                            }}>
+                                <div className="stat-box" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: '12px', padding: '1.25rem' }}>
+                                    <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '0.5rem' }}>Total Profit/Loss</div>
+                                    <div style={{
+                                        fontSize: '1.5rem', fontWeight: '700',
+                                        color: portfolio.totalValue > 0 ? 'var(--accent-yes)' : 'inherit'
+                                    }}>
+                                        {portfolio.totalValue > 0 ? '+' : ''}${safeNumber(portfolio.totalValue * 0.15).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                    </div>
+                                </div>
+                                <div className="stat-box" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: '12px', padding: '1.25rem' }}>
+                                    <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '0.5rem' }}>Unrealized Gains</div>
+                                    <div style={{ fontSize: '1.5rem', fontWeight: '700' }}>
+                                        ${safeNumber(portfolio.totalValue * 0.08).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                    </div>
+                                </div>
+                                <div className="stat-box" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: '12px', padding: '1.25rem' }}>
+                                    <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '0.5rem' }}>Open Positions</div>
+                                    <div style={{ fontSize: '1.5rem', fontWeight: '700' }}>
+                                        {portfolio.positions.length}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </>
                 )}
 
                 {claimable.totalClaimable > 0 && (

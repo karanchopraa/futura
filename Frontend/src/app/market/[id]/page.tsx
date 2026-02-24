@@ -4,21 +4,41 @@ import { useState, useEffect, useCallback, use } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import LightweightChart from "@/components/LightweightChart";
-import { Link as LinkIcon } from "lucide-react";
+import { Link as LinkIcon, Share2 } from "lucide-react";
 import OrderForm from "@/components/OrderForm";
 import OrderBook from "@/components/OrderBook";
 import { fetchMarket, type Market, formatVolume } from "@/lib/api";
+import { showToast } from "@/components/Toast";
+import { getAddress, connectWallet } from "@/lib/wallet";
+import { getUserShares } from "@/lib/contracts";
 
 export default function MarketDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params);
     const [market, setMarket] = useState<Market | null>(null);
     const [loading, setLoading] = useState(true);
     const [timeRange, setTimeRange] = useState<"1D" | "1W" | "1M" | "ALL">("1M");
+    const [userPosition, setUserPosition] = useState<{ yes: number, no: number } | null>(null);
 
     const loadMarket = useCallback(async () => {
         try {
             const data = await fetchMarket(id);
             setMarket(data);
+
+            // Fetch user position if wallet is connected
+            const addr = await getAddress();
+            if (addr && data) {
+                try {
+                    const shares = await getUserShares(data.address, addr);
+                    const yesShares = Number(shares.yesShares);
+                    const noShares = Number(shares.noShares);
+                    if (yesShares > 0 || noShares > 0) {
+                        setUserPosition({ yes: yesShares, no: noShares });
+                    }
+                } catch (err) {
+                    console.warn("Could not fetch user position:", err);
+                }
+            }
+
         } catch (error) {
             console.error("Failed to load market:", error);
         } finally {
@@ -110,6 +130,21 @@ export default function MarketDetailPage({ params }: { params: Promise<{ id: str
                         <div className="market-tags">
                             <span className="market-tag">{categoryMap[market.category] || market.category}</span>
                             <span className="market-tag tag-blue">Volume: ${formatVolume(market.volume)}</span>
+                            {market.tradersCount !== undefined && (
+                                <span className="market-tag" style={{ border: '1px solid var(--border)', background: 'transparent' }}>
+                                    {market.tradersCount} Traders
+                                </span>
+                            )}
+                            <button
+                                className="market-tag"
+                                style={{ background: 'transparent', border: '1px solid var(--border)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                                onClick={() => {
+                                    navigator.clipboard.writeText(window.location.href);
+                                    showToast('Link copied to clipboard!', 'success');
+                                }}
+                            >
+                                <Share2 size={12} /> Share
+                            </button>
                         </div>
                         <h1 className="market-page-title">{market.question}</h1>
 
@@ -190,6 +225,30 @@ export default function MarketDetailPage({ params }: { params: Promise<{ id: str
 
                 {/* Right Column: Trading Actions */}
                 <div className="market-sidebar">
+
+                    {userPosition && (
+                        <div className="glass-panel" style={{ padding: '1rem', marginBottom: '1rem', borderTop: '3px solid var(--accent-blue)' }}>
+                            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.5rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                                Your Position
+                            </div>
+                            {userPosition.yes > 0 && (
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+                                    <span style={{ color: 'var(--accent-yes)' }}>YES Shares</span>
+                                    <span style={{ fontWeight: 600 }}>{userPosition.yes.toFixed(2)}</span>
+                                </div>
+                            )}
+                            {userPosition.no > 0 && (
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <span style={{ color: 'var(--accent-no)' }}>NO Shares</span>
+                                    <span style={{ fontWeight: 600 }}>{userPosition.no.toFixed(2)}</span>
+                                </div>
+                            )}
+                            <div style={{ marginTop: '0.75rem', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                                Est. Value: ${((userPosition.yes * (market.yesPrice / 100)) + (userPosition.no * (market.noPrice / 100))).toFixed(2)}
+                            </div>
+                        </div>
+                    )}
+
                     <OrderForm
                         yesProb={Math.round(market.yesPrice)}
                         noProb={Math.round(market.noPrice)}

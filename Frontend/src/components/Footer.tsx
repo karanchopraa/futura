@@ -22,25 +22,25 @@ export default function Footer() {
                 <div className="footer-links-grid">
                     <div className="footer-column">
                         <h3>Markets</h3>
-                        <Link href="#">Politics</Link>
-                        <Link href="#">Crypto</Link>
-                        <Link href="#">Sports</Link>
-                        <Link href="#">Pop Culture</Link>
-                        <Link href="#">Science & Tech</Link>
+                        <Link href="/?category=politics">Politics</Link>
+                        <Link href="/?category=crypto">Crypto</Link>
+                        <Link href="/?category=sports">Sports</Link>
+                        <Link href="/?category=pop">Pop Culture</Link>
+                        <Link href="/?category=tech">Science & Tech</Link>
                     </div>
                     <div className="footer-column">
                         <h3>Resources</h3>
-                        <Link href="#">How to Trade</Link>
-                        <Link href="#">Help Center</Link>
-                        <Link href="#">Bug Bounty</Link>
-                        <Link href="#">Developers</Link>
+                        <Link href="/how-to-trade">How to Trade</Link>
+                        <Link href="/help">Help Center</Link>
+                        <Link href="/bug-bounty">Bug Bounty</Link>
+                        <Link href="/developers">Developers</Link>
                     </div>
                     <div className="footer-column">
                         <h3>Company</h3>
-                        <Link href="#">About</Link>
-                        <Link href="#">Careers</Link>
-                        <Link href="#">Terms of Service</Link>
-                        <Link href="#">Privacy Policy</Link>
+                        <Link href="/about">About</Link>
+                        <Link href="/careers">Careers</Link>
+                        <Link href="/terms">Terms of Service</Link>
+                        <Link href="/privacy">Privacy Policy</Link>
                     </div>
                 </div>
             </div>

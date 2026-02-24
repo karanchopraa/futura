@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { connectWallet, getAddress, isWalletAvailable } from "@/lib/wallet";
 import { buyYesShares, buyNoShares, sellYesShares, sellNoShares, getUserShares } from "@/lib/contracts";
+import { showToast } from "@/components/Toast";
 
 interface OrderFormProps {
     yesProb: number;
@@ -50,7 +51,8 @@ export default function OrderForm({ yesProb, noProb, marketAddress, tradingFee =
     const price = outcome === "Yes" ? yesProb : noProb;
 
     // --- Buy mode calculations ---
-    const feePct = tradingFee / 10000;
+    const activeTradingFee = tradingFee || 200; // Default to 2% if missing for demonstration
+    const feePct = activeTradingFee / 10000;
     const inputAmount = Number(amount) || 0;
     const feeAmount = inputAmount * feePct;
     const netAmount = inputAmount - feeAmount;
@@ -71,7 +73,7 @@ export default function OrderForm({ yesProb, noProb, marketAddress, tradingFee =
             try {
                 address = await connectWallet();
             } catch (error) {
-                alert("Please connect your wallet to trade.");
+                showToast("Please connect your wallet to trade.", "error");
                 return;
             }
         }
@@ -109,7 +111,7 @@ export default function OrderForm({ yesProb, noProb, marketAddress, tradingFee =
         } catch (error: any) {
             console.error("Trade failed:", error);
             const msg = error?.reason || error?.message || "Unknown error";
-            alert(`Trade failed: ${msg}`);
+            showToast(`Trade failed: ${msg}`, "error");
             setTxStatus("error");
             setTimeout(() => setTxStatus("idle"), 3000);
         }
@@ -123,7 +125,7 @@ export default function OrderForm({ yesProb, noProb, marketAddress, tradingFee =
             try {
                 address = await connectWallet();
             } catch (error) {
-                alert("Please connect your wallet to sell.");
+                showToast("Please connect your wallet to sell.", "error");
                 return;
             }
         }
@@ -162,7 +164,7 @@ export default function OrderForm({ yesProb, noProb, marketAddress, tradingFee =
         } catch (error: any) {
             console.error("Sell failed:", error);
             const msg = error?.reason || error?.message || "Unknown error";
-            alert(`Sell failed: ${msg}`);
+            showToast(`Sell failed: ${msg}`, "error");
             setTxStatus("error");
             setTimeout(() => setTxStatus("idle"), 3000);
         }
@@ -261,6 +263,15 @@ export default function OrderForm({ yesProb, noProb, marketAddress, tradingFee =
                             <span className="text-secondary">Shares</span>
                             <span>{buySharesCalc.toFixed(2)}</span>
                         </div>
+                        {activeTradingFee > 0 && (
+                            <div className="summary-row">
+                                <span className="text-secondary" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                    Fee ({(activeTradingFee / 100).toFixed(1)}%)
+                                    <span style={{ fontSize: '0.65rem', background: 'var(--bg-tertiary)', padding: '1px 4px', borderRadius: '4px' }}>tUSDC</span>
+                                </span>
+                                <span>${feeAmount.toFixed(2)}</span>
+                            </div>
+                        )}
                         <div className="summary-row">
                             <span className="text-secondary">Potential Return</span>
                             <span className="text-success">{returnPct.toFixed(2)}% (${(payout - Number(amount)).toFixed(2)})</span>

@@ -23,6 +23,21 @@
   --radius-sm: 6px;
   --radius-md: 10px;
   --radius-lg: 14px;
+  --navbar-bg: rgba(14, 16, 20, 0.92);
+}
+
+[data-theme='light'] {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8fafc;
+  --bg-tertiary: #f1f5f9;
+  --text-primary: #0f172a;
+  --text-secondary: #64748b;
+  --border: #e2e8f0;
+  --border-hover: #cbd5e1;
+  --glass-bg: rgba(255, 255, 255, 0.8);
+  --navbar-bg: rgba(255, 255, 255, 0.92);
+  --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 4px 12px rgba(0, 0, 0, 0.05);
+  --card-shadow-hover: 0 4px 16px rgba(0, 0, 0, 0.08), 0 8px 24px rgba(0, 0, 0, 0.08);
 }
 
 * {
@@ -64,10 +79,10 @@ a {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 1.5rem;
-  height: 56px;
+  padding: 0 2rem;
+  height: 64px;
   border-bottom: 1px solid var(--border);
-  background: rgba(14, 16, 20, 0.92);
+  background: var(--navbar-bg);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   position: sticky;
@@ -103,33 +118,38 @@ a {
 .navbar-search {
   display: flex;
   align-items: center;
-  background: var(--bg-secondary);
-  border: 1px solid var(--border);
-  border-radius: 20px;
-  padding: 0.4rem 0.9rem;
-  width: 220px;
+  position: relative;
   transition: all 0.25s ease;
-}
-
-.navbar-search:focus-within {
-  border-color: var(--accent-yes);
-  background: var(--bg-primary);
-  width: 300px;
-  box-shadow: 0 0 0 3px rgba(33, 81, 245, 0.1);
 }
 
 .search-icon {
   color: var(--text-secondary);
-  margin-right: 0.5rem;
+  position: absolute;
+  left: 0.9rem;
+  pointer-events: none;
 }
 
 .search-input {
-  background: transparent;
-  border: none;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
   color: var(--text-primary);
-  outline: none;
-  width: 100%;
+  border-radius: 20px;
+  padding: 0.5rem 1rem 0.5rem 2.5rem;
+  width: 260px;
   font-size: 0.95rem;
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.search-input:focus {
+  border-color: var(--accent-yes);
+  background: var(--bg-tertiary);
+  width: 320px;
+  box-shadow: 0 0 0 3px var(--accent-yes-bg);
+}
+
+.search-input::placeholder {
+  color: var(--text-secondary);
 }
 
 .navbar-actions {
@@ -174,19 +194,34 @@ a {
 .featured-market {
   display: flex;
   justify-content: space-between;
-  padding: 2rem;
+  padding: 3rem 4.5rem;
   margin-bottom: 2.5rem;
   background: var(--bg-secondary);
   border: 1px solid var(--border);
   border-radius: 12px;
   position: relative;
   overflow: hidden;
+  transition: box-shadow 0.2s;
+}
+
+@media (max-width: 968px) {
+  .featured-market {
+    flex-direction: column;
+    padding: 1.5rem;
+  }
 }
 
 .featured-content {
   flex: 1;
-  max-width: 55%;
+  max-width: 60%;
   z-index: 2;
+}
+
+@media (max-width: 968px) {
+  .featured-content {
+    max-width: 100%;
+    margin-bottom: 2rem;
+  }
 }
 
 .featured-header {
@@ -228,7 +263,6 @@ a {
 }
 
 .featured-visual {
-  flex: 0.9;
   display: flex;
   align-items: flex-end;
   justify-content: flex-end;
@@ -236,11 +270,12 @@ a {
   right: 0;
   bottom: 0;
   height: 100%;
-  width: 50%;
+  width: 100%;
+  padding: 3rem 4.5rem;
   z-index: 1;
   opacity: 0.8;
   border-radius: 0 12px 12px 0;
-  background: linear-gradient(90deg, transparent 0%, rgba(33, 81, 245, 0.05) 100%);
+  background: linear-gradient(90deg, transparent 0%, transparent 45%, rgba(41, 98, 255, 0.15) 100%);
 }
 
 .chart-placeholder {
@@ -319,6 +354,33 @@ a {
   overflow: hidden;
 }
 
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 4px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.badge-yes {
+  background: rgba(33, 81, 245, 0.15);
+  color: var(--accent-yes);
+}
+
+.badge-no {
+  background: rgba(226, 44, 44, 0.15);
+  color: var(--accent-no);
+}
+
+.market-resolved {
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.market-resolved .card-title {
+  color: var(--text-secondary);
+}
+
 .card-actions {
   display: flex;
   gap: 0.5rem;
@@ -379,9 +441,23 @@ a {
   background: var(--bg-primary);
   padding: 1.5rem 1rem;
   position: sticky;
-  top: 70px;
-  height: calc(100vh - 70px);
+  top: 64px;
+  height: calc(100vh - 64px);
   overflow-y: auto;
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    display: none;
+  }
+
+  .navbar-categories {
+    display: none;
+  }
+
+  .navbar-search-container {
+    display: none;
+  }
 }
 
 .sidebar-nav {
@@ -1382,6 +1458,7 @@ a {
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   box-shadow: var(--card-shadow);
+  padding: 1.5rem;
 }
 
 .text-success {
