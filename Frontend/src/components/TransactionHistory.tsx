@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { ExternalLink } from "lucide-react";
 import type { Trade } from "@/lib/api";
 
@@ -19,6 +20,12 @@ export default function TransactionHistory({ trades, loading }: TransactionHisto
             </div>
         );
     }
+
+    const [currentPage, setCurrentPage] = useState(1);
+    const ITEMS_PER_PAGE = 10;
+
+    const totalPages = Math.ceil((trades?.length || 0) / ITEMS_PER_PAGE);
+    const paginatedTrades = (trades || []).slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
     const getActionLabel = (action: string) => {
         const map: Record<string, string> = {
@@ -52,7 +59,7 @@ export default function TransactionHistory({ trades, loading }: TransactionHisto
 
     const shortenHash = (hash: string) => `${hash.substring(0, 6)}...${hash.substring(hash.length - 4)}`;
 
-    const explorerBaseUrl = "https://explorer-testnet.qubetics.work/tx/";
+    const explorerBaseUrl = "https://explorer.qubetics.work/tx/";
 
     return (
         <div className="portfolio-card glass-panel">
@@ -74,7 +81,7 @@ export default function TransactionHistory({ trades, loading }: TransactionHisto
                         </tr>
                     </thead>
                     <tbody>
-                        {trades.map((tx) => (
+                        {paginatedTrades.map((tx) => (
                             <tr key={tx.id}>
                                 <td>
                                     <span className={`tx-type ${getActionClass(tx.action)}`}>
@@ -100,6 +107,28 @@ export default function TransactionHistory({ trades, loading }: TransactionHisto
                         ))}
                     </tbody>
                 </table>
+            )}
+
+            {totalPages > 1 && (
+                <div className="pagination-controls" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1.5rem', padding: '0 0.5rem' }}>
+                    <button
+                        className="button-secondary btn-sm"
+                        disabled={currentPage === 1}
+                        onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    >
+                        Previous
+                    </button>
+                    <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                        Page {currentPage} of {totalPages}
+                    </span>
+                    <button
+                        className="button-secondary btn-sm"
+                        disabled={currentPage === totalPages}
+                        onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    >
+                        Next
+                    </button>
+                </div>
             )}
         </div>
     );

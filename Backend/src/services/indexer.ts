@@ -143,7 +143,7 @@ async function indexMarket(address: string, provider: ethers.JsonRpcProvider) {
 }
 
 function listenToMarketEvents(contract: ethers.Contract, marketAddress: string) {
-    contract.on("SharesPurchased", async (buyer: string, isYes: boolean, amount: bigint, shares: bigint, newYesPrice: bigint, newNoPrice: bigint) => {
+    contract.on("SharesPurchased", async (buyer: string, isYes: boolean, amount: bigint, shares: bigint, newYesPrice: bigint, newNoPrice: bigint, event: any) => {
         const yesPriceNum = Number(newYesPrice) / 10000;
         const noPriceNum = Number(newNoPrice) / 10000;
         const amountNum = Number(amount) / 1e6;
@@ -168,18 +168,27 @@ function listenToMarketEvents(contract: ethers.Contract, marketAddress: string) 
         });
 
         // Record the trade
-        const txEvent = contract.runner?.provider ? await contract.runner.provider.getBlock("latest") : null;
-        await prisma.trade.create({
-            data: {
-                marketId: market.id,
-                userAddress: buyer.toLowerCase(),
-                action: isYes ? "BUY_YES" : "BUY_NO",
-                shares: sharesNum,
-                price: pricePerShare,
-                amount: amountNum,
-                txHash: `0x${Date.now().toString(16)}${Math.random().toString(16).slice(2, 10)}`,
-            },
-        });
+        const txHash = event?.log?.transactionHash || `0x${Date.now().toString(16)}${Math.random().toString(16).slice(2, 10)}`;
+        try {
+            await prisma.trade.create({
+                data: {
+                    marketId: market.id,
+                    userAddress: buyer.toLowerCase(),
+                    action: isYes ? "BUY_YES" : "BUY_NO",
+                    shares: sharesNum,
+                    price: pricePerShare,
+                    amount: amountNum,
+                    txHash,
+                },
+            });
+        } catch (err: any) {
+            if (err.code === "P2002") {
+                console.log(`  ⚠️ Trade already recorded (txHash: ${txHash}). Skipping position update.`);
+                return; // Abort further updates if this is a duplicate event
+            }
+            console.error("Error saving trade:", err);
+            return;
+        }
 
         // Upsert position
         const outcome = isYes ? "YES" : "NO";
@@ -211,6 +220,78 @@ function listenToMarketEvents(contract: ethers.Contract, marketAddress: string) 
         }
 
         console.log(`  📝 Recorded trade & position for ${buyer.substring(0, 10)}`);
+    });
+
+    contract.on("SharesSold", async (seller: string, isYes: boolean, shares: bigint, payout: bigint, newYesPrice: bigint, newNoPrice: bigint, event: any) => {
+        const yesPriceNum = Number(newYesPrice) / 10000;
+        const noPriceNum = Number(newNoPrice) / 10000;
+        const payoutNum = Number(payout) / 1e6;
+        const sharesNum = Number(shares) / 1e6;
+        const pricePerShare = sharesNum > 0 ? (payoutNum / sharesNum) * 100 : 50;
+
+        console.log(`  📉 ${isYes ? "YES" : "NO"} sold on ${marketAddress.substring(0, 10)}... — $${payoutNum} by ${seller.substring(0, 10)}`);
+
+        // Update market prices & volume
+        const market = await prisma.market.update({
+            where: { address: marketAddress },
+            data: {
+                yesPrice: yesPriceNum,
+                noPrice: noPriceNum,
+                volume: { increment: payoutNum },
+            },
+        });
+
+        // Record price history
+        await prisma.priceHistory.create({
+            data: { marketId: market.id, yesPrice: yesPriceNum, noPrice: noPriceNum },
+        });
+
+        // Record the trade
+        const txHash = event?.log?.transactionHash || `0x${Date.now().toString(16)}${Math.random().toString(16).slice(2, 10)}`;
+        try {
+            await prisma.trade.create({
+                data: {
+                    marketId: market.id,
+                    userAddress: seller.toLowerCase(),
+                    action: isYes ? "SELL_YES" : "SELL_NO",
+                    shares: sharesNum,
+                    price: pricePerShare,
+                    amount: payoutNum,
+                    txHash,
+                },
+            });
+        } catch (err: any) {
+            if (err.code === "P2002") {
+                console.log(`  ⚠️ Sell trade already recorded (txHash: ${txHash}). Skipping position update.`);
+                return; // Abort further updates to avoid double-deduction
+            }
+            console.error("Error saving sell trade:", err);
+            return;
+        }
+
+        // Update position
+        const outcome = isYes ? "YES" : "NO";
+        const existingPosition = await prisma.position.findFirst({
+            where: {
+                marketId: market.id,
+                userAddress: seller.toLowerCase(),
+                outcome,
+            },
+        });
+
+        if (existingPosition) {
+            const newShares = existingPosition.shares - sharesNum;
+            if (newShares <= 0) {
+                await prisma.position.delete({ where: { id: existingPosition.id } });
+            } else {
+                await prisma.position.update({
+                    where: { id: existingPosition.id },
+                    data: { shares: newShares },
+                });
+            }
+        }
+
+        console.log(`  📝 Recorded sell trade & position update for ${seller.substring(0, 10)}`);
     });
 
     contract.on("MarketResolved", async (outcomeResult, timestamp) => {

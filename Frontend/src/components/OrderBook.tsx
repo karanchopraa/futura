@@ -20,6 +20,7 @@ interface OrderBookProps {
 
 export default function OrderBook({ yesPrice = 50, noPrice = 50, marketId }: OrderBookProps) {
     const [trades, setTrades] = useState<Trade[]>([]);
+    const [tick, setTick] = useState<number>(0);
     const mid = yesPrice;
 
     // Fetch real trades for this market
@@ -40,16 +41,26 @@ export default function OrderBook({ yesPrice = 50, noPrice = 50, marketId }: Ord
         };
 
         loadTrades();
-        const interval = setInterval(loadTrades, 10_000); // Refresh every 10s
-        return () => clearInterval(interval);
+        const tradeInterval = setInterval(loadTrades, 10_000); // Refresh trades every 10s
+        const jitterInterval = setInterval(() => setTick((t) => t + 1), 3000); // Jitter book every 3s
+
+        return () => {
+            clearInterval(tradeInterval);
+            clearInterval(jitterInterval);
+        };
     }, [marketId]);
 
-    // Generate simulated depth levels around current price
+    // Generate dynamically jittering simulated depth levels around current price
     const generateAsks = () => {
         const asks = [];
         for (let i = 1; i <= 5; i++) {
             const price = Math.min(99, mid + i * 2);
-            const size = Math.floor(500 + (5 - i) * 2000);
+            if (price >= 100) continue;
+            const baseSize = 500 + (5 - i) * 2000;
+            // Jitter ±15% based on tick and row index
+            const jitter = Math.sin(tick * 1.5 + i) * 0.15;
+            const size = Math.max(10, Math.floor(baseSize * (1 + jitter)));
+
             asks.push({ price: price.toFixed(1), size: size.toLocaleString(), total: `$${((price / 100) * size).toFixed(2)}`, rawSize: size });
         }
         return asks.sort((a, b) => parseFloat(a.price) - parseFloat(b.price));
@@ -59,7 +70,11 @@ export default function OrderBook({ yesPrice = 50, noPrice = 50, marketId }: Ord
         const bids = [];
         for (let i = 1; i <= 5; i++) {
             const price = Math.max(1, mid - i * 2);
-            const size = Math.floor(500 + (5 - i) * 2000);
+            if (price <= 0) continue;
+            const baseSize = 500 + (5 - i) * 2000;
+            const jitter = Math.cos(tick * 1.5 + i) * 0.15;
+            const size = Math.max(10, Math.floor(baseSize * (1 + jitter)));
+
             bids.push({ price: price.toFixed(1), size: size.toLocaleString(), total: `$${((price / 100) * size).toFixed(2)}`, rawSize: size });
         }
         return bids.sort((a, b) => parseFloat(b.price) - parseFloat(a.price));

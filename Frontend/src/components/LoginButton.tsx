@@ -9,6 +9,13 @@ export default function LoginButton() {
     const [connecting, setConnecting] = useState(false);
 
     useEffect(() => {
+        // Initialize state on mount
+        if (isWalletAvailable()) {
+            getAddress().then((addr) => {
+                if (addr) setAddress(addr);
+            }).catch(console.error);
+        }
+
         // Listen for account changes
         if (typeof window !== "undefined" && (window as any).ethereum) {
             const eth = (window as any).ethereum;

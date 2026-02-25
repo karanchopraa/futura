@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { connectWallet, getAddress, isWalletAvailable } from "@/lib/wallet";
-import { buyYesShares, buyNoShares, sellYesShares, sellNoShares, getUserShares } from "@/lib/contracts";
+import { buyYesShares, buyNoShares, sellYesShares, sellNoShares, getUserShares, getTokenBalance } from "@/lib/contracts";
 import { showToast } from "@/components/Toast";
 
 interface OrderFormProps {
@@ -21,31 +21,37 @@ export default function OrderForm({ yesProb, noProb, marketAddress, tradingFee =
     const [txStatus, setTxStatus] = useState<"idle" | "pending" | "success" | "error">("idle");
     const [txHash, setTxHash] = useState<string>("");
 
-    // User share balances for sell mode
+    // User balances for buy/sell modes
     const [userYesShares, setUserYesShares] = useState<number>(0);
     const [userNoShares, setUserNoShares] = useState<number>(0);
-    const [sharesLoading, setSharesLoading] = useState(false);
+    const [userTokenBalance, setUserTokenBalance] = useState<number>(0);
+    const [balancesLoading, setBalancesLoading] = useState(false);
 
-    // Fetch user shares when switching to sell mode or when address changes
+    // Fetch user shares and token balance
     useEffect(() => {
-        if (mode !== "sell" || !marketAddress) return;
+        if (!marketAddress) return;
 
-        const fetchShares = async () => {
+        const fetchBalances = async () => {
             const addr = await getAddress();
             if (!addr) return;
 
-            setSharesLoading(true);
+            setBalancesLoading(true);
             try {
-                const shares = await getUserShares(marketAddress, addr);
+                const [shares, tokenBal] = await Promise.all([
+                    getUserShares(marketAddress, addr),
+                    getTokenBalance(addr)
+                ]);
                 setUserYesShares(Number(shares.yesShares));
                 setUserNoShares(Number(shares.noShares));
+                setUserTokenBalance(Number(tokenBal));
             } catch (err) {
-                console.error("Failed to fetch shares:", err);
+                console.error("Failed to fetch balances:", err);
             } finally {
-                setSharesLoading(false);
+                setBalancesLoading(false);
             }
         };
-        fetchShares();
+
+        fetchBalances();
     }, [mode, marketAddress, txStatus]);
 
     const price = outcome === "Yes" ? yesProb : noProb;
@@ -60,13 +66,22 @@ export default function OrderForm({ yesProb, noProb, marketAddress, tradingFee =
     const payout = buySharesCalc * 1;
     const returnPct = inputAmount > 0 ? ((payout - inputAmount) / inputAmount) * 100 : 0;
 
-    // --- Sell mode calculations ---
     const availableShares = outcome === "Yes" ? userYesShares : userNoShares;
     const sellSharesNum = Number(sellShares) || 0;
     const estimatedPayout = sellSharesNum * (price / 100);
 
+    const handleAmountChange = (val: string) => {
+        if (Number(val) < 0) return;
+        setAmount(val);
+    };
+
+    const handleSellSharesChange = (val: string) => {
+        if (Number(val) < 0) return;
+        setSellShares(val);
+    };
+
     const handleBuy = async () => {
-        if (!marketAddress || !amount || Number(amount) <= 0) return;
+        if (!marketAddress || !amount || Number(amount) <= 0 || Number(amount) > userTokenBalance) return;
 
         let address = await getAddress();
         if (!address) {
@@ -106,6 +121,7 @@ export default function OrderForm({ yesProb, noProb, marketAddress, tradingFee =
                 console.warn("Failed to record trade in backend:", apiErr);
             }
 
+            setAmount("");
             setTxStatus("success");
             setTimeout(() => setTxStatus("idle"), 5000);
         } catch (error: any) {
@@ -239,18 +255,41 @@ export default function OrderForm({ yesProb, noProb, marketAddress, tradingFee =
                     <div className="input-group">
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
                             <label>Amount</label>
-                            <span className="text-secondary" style={{ fontSize: '0.8rem' }}>Max: $5,000</span>
+                            <span className="text-secondary" style={{ fontSize: '0.8rem' }}>
+                                {balancesLoading ? "Loading..." : `Available: $${userTokenBalance.toFixed(2)}`}
+                            </span>
                         </div>
                         <div className="currency-input">
                             <span className="currency-symbol">$</span>
                             <input
                                 type="number"
                                 value={amount}
-                                onChange={(e) => setAmount(e.target.value)}
+                                onChange={(e) => handleAmountChange(e.target.value)}
                                 placeholder="0"
+                                min="1"
+                                max={userTokenBalance}
                                 disabled={txStatus === "pending"}
                             />
-                            <span className="currency-type">tUSDC</span>
+                            <button
+                                className="max-btn"
+                                onClick={() => setAmount(userTokenBalance.toString())}
+                                disabled={userTokenBalance <= 0 || txStatus === "pending"}
+                                style={{
+                                    background: 'var(--bg-tertiary)',
+                                    border: '1px solid var(--border)',
+                                    borderRadius: '6px',
+                                    color: outcome === "Yes" ? 'var(--accent-yes)' : 'var(--accent-no)',
+                                    padding: '0.3rem 0.75rem',
+                                    margin: '0.3rem 0.5rem',
+                                    fontSize: '0.75rem',
+                                    fontWeight: 700,
+                                    cursor: 'pointer',
+                                    letterSpacing: '0.5px',
+                                }}
+                            >
+                                MAX
+                            </button>
+                            <span className="currency-type" style={{ marginLeft: "4px" }}>tUSDC</span>
                         </div>
                     </div>
 
@@ -289,15 +328,16 @@ export default function OrderForm({ yesProb, noProb, marketAddress, tradingFee =
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
                             <label>Shares to Sell</label>
                             <span className="text-secondary" style={{ fontSize: '0.8rem' }}>
-                                {sharesLoading ? "Loading..." : `Available: ${availableShares.toFixed(2)}`}
+                                {balancesLoading ? "Loading..." : `Available: ${availableShares.toFixed(2)}`}
                             </span>
                         </div>
                         <div className="currency-input">
                             <input
                                 type="number"
                                 value={sellShares}
-                                onChange={(e) => setSellShares(e.target.value)}
+                                onChange={(e) => handleSellSharesChange(e.target.value)}
                                 placeholder="0"
+                                min="0.01"
                                 max={availableShares}
                                 disabled={txStatus === "pending"}
                             />
@@ -338,7 +378,7 @@ export default function OrderForm({ yesProb, noProb, marketAddress, tradingFee =
                         </div>
                     </div>
 
-                    {availableShares <= 0 && !sharesLoading && (
+                    {availableShares <= 0 && !balancesLoading && (
                         <div style={{
                             padding: '0.75rem 1rem',
                             background: 'rgba(239, 68, 68, 0.08)',
@@ -359,7 +399,8 @@ export default function OrderForm({ yesProb, noProb, marketAddress, tradingFee =
                 onClick={mode === "buy" ? handleBuy : handleSell}
                 disabled={
                     txStatus === "pending" ||
-                    (mode === "sell" && (sellSharesNum <= 0 || sellSharesNum > availableShares))
+                    (mode === "sell" && (sellSharesNum <= 0 || sellSharesNum > availableShares)) ||
+                    (mode === "buy" && (inputAmount <= 0 || inputAmount > userTokenBalance))
                 }
                 style={{
                     opacity: txStatus === "pending" ? 0.7 : 1,
@@ -376,7 +417,7 @@ export default function OrderForm({ yesProb, noProb, marketAddress, tradingFee =
             {txStatus === "success" && txHash && (
                 <div style={{ marginTop: "0.5rem", textAlign: "center", fontSize: "0.75rem" }}>
                     <a
-                        href={`https://explorer-testnet.qubetics.work/tx/${txHash}`}
+                        href={`https://explorer.qubetics.work/tx/${txHash}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         style={{ color: "var(--accent-blue)", textDecoration: "underline" }}

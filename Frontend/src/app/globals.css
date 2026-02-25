@@ -649,6 +649,19 @@ a {
   color: var(--text-primary);
 }
 
+@media (max-width: 768px) {
+  .footer-content {
+    flex-direction: column;
+    gap: 2.5rem;
+  }
+
+  .footer-links-grid {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    gap: 2rem;
+  }
+}
+
 .footer-bottom {
   max-width: 1200px;
   margin: 3rem auto 0;
@@ -1249,6 +1262,24 @@ a {
   background: rgba(251, 191, 36, 0.15);
   box-shadow: 0 0 24px rgba(251, 191, 36, 0.25);
   transform: translateY(-1px);
+}
+
+@media (max-width: 768px) {
+  .portfolio-layout {
+    padding: 1.25rem 1rem;
+  }
+
+  .portfolio-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .claim-banner {
+    flex-direction: column;
+    text-align: center;
+    gap: 1.25rem;
+  }
 }
 
 /* Active Positions */

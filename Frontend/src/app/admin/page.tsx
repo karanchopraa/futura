@@ -28,6 +28,15 @@ export default function AdminPage() {
         let isMounted = true;
         setIsCheckingWallet(false);
 
+        // Initialize state on mount
+        if (isWalletAvailable()) {
+            getAddress().then((addr) => {
+                if (isMounted && addr) {
+                    setConnectedWallet(addr.toLowerCase());
+                }
+            }).catch(console.error);
+        }
+
         onAccountsChanged((accounts) => {
             if (isMounted) {
                 setConnectedWallet(accounts[0] ? accounts[0].toLowerCase() : null);

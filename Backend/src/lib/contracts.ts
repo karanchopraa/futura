@@ -53,5 +53,5 @@ export const QUBETICS_CONFIG = {
     rpc: "https://rpc-testnet.qubetics.work/",
     name: "Qubetics Testnet",
     currency: "TICS",
-    explorer: "https://explorer-testnet.qubetics.work",
+    explorer: "https://explorer.qubetics.work",
 };

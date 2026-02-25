@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import DepositModal from "@/components/DepositModal";
 import Navbar from "@/components/Navbar";
 import FeaturedCarousel from "@/components/FeaturedCarousel";
@@ -9,7 +10,8 @@ import Sidebar from "@/components/Sidebar";
 import Footer from "@/components/Footer";
 import { fetchMarkets, formatVolume, type Market } from "@/lib/api";
 
-export default function Home() {
+function HomeContent() {
+  const searchParams = useSearchParams();
   const [isDepositOpen, setIsDepositOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState("all");
   const [markets, setMarkets] = useState<Market[]>([]);
@@ -24,16 +26,15 @@ export default function Home() {
     setCurrentPage(1);
   }, [activeCategory]);
 
-  // Read category from URL on initial load if present
+  // Read category reactively from Next.js router
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const params = new URLSearchParams(window.location.search);
-      const cat = params.get("category");
-      if (cat) {
-        setActiveCategory(cat);
-      }
+    const cat = searchParams?.get("category");
+    if (cat) {
+      setActiveCategory(cat);
+    } else {
+      setActiveCategory("all");
     }
-  }, []);
+  }, [searchParams]);
 
   useEffect(() => {
     const loadMarkets = async () => {
@@ -187,5 +188,13 @@ export default function Home() {
       <Footer />
       {isDepositOpen && <DepositModal isOpen={isDepositOpen} onClose={() => setIsDepositOpen(false)} />}
     </>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={<div style={{ minHeight: '100vh', background: 'var(--bg-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)' }}>Loading Futura...</div>}>
+      <HomeContent />
+    </Suspense>
   );
 }

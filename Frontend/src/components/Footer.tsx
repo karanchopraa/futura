@@ -30,17 +30,17 @@ export default function Footer() {
                     </div>
                     <div className="footer-column">
                         <h3>Resources</h3>
-                        <Link href="/how-to-trade">How to Trade</Link>
-                        <Link href="/help">Help Center</Link>
-                        <Link href="/bug-bounty">Bug Bounty</Link>
-                        <Link href="/developers">Developers</Link>
+                        <Link href="#">How to Trade</Link>
+                        <Link href="#">Help Center</Link>
+                        <Link href="#">Bug Bounty</Link>
+                        <Link href="#">Developers</Link>
                     </div>
                     <div className="footer-column">
                         <h3>Company</h3>
-                        <Link href="/about">About</Link>
-                        <Link href="/careers">Careers</Link>
-                        <Link href="/terms">Terms of Service</Link>
-                        <Link href="/privacy">Privacy Policy</Link>
+                        <Link href="#">About</Link>
+                        <Link href="#">Careers</Link>
+                        <Link href="#">Terms of Service</Link>
+                        <Link href="#">Privacy Policy</Link>
                     </div>
                 </div>
             </div>

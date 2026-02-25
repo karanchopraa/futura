@@ -23,6 +23,13 @@ export default function PortfolioPage() {
     useEffect(() => {
         setWalletChecked(true);
 
+        // Initialize state on mount
+        if (isWalletAvailable()) {
+            getAddress().then((addr) => {
+                if (addr) setWalletAddress(addr);
+            }).catch(console.error);
+        }
+
         if (typeof window !== "undefined" && (window as any).ethereum) {
             const handleAccountsChanged = (accounts: string[]) => {
                 setWalletAddress(accounts.length > 0 ? accounts[0] : null);
@@ -78,10 +85,13 @@ export default function PortfolioPage() {
 
         try {
             let txHash: string;
+            // Truncate float to max 6 decimals to prevent parseUnits error in contracts
+            const safeShares = Math.floor(position.shares * 1e6) / 1e6;
+
             if (position.outcome === "YES") {
-                txHash = await sellYesShares(position.market.address, position.shares);
+                txHash = await sellYesShares(position.market.address, safeShares);
             } else {
-                txHash = await sellNoShares(position.market.address, position.shares);
+                txHash = await sellNoShares(position.market.address, safeShares);
             }
 
             // Record the sell trade in backend

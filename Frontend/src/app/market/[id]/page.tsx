@@ -16,7 +16,7 @@ export default function MarketDetailPage({ params }: { params: Promise<{ id: str
     const { id } = use(params);
     const [market, setMarket] = useState<Market | null>(null);
     const [loading, setLoading] = useState(true);
-    const [timeRange, setTimeRange] = useState<"1D" | "1W" | "1M" | "ALL">("1M");
+    const [timeRange, setTimeRange] = useState<"1H" | "1D" | "1W" | "1M" | "ALL">("1M");
     const [userPosition, setUserPosition] = useState<{ yes: number, no: number } | null>(null);
 
     const loadMarket = useCallback(async () => {
@@ -89,6 +89,7 @@ export default function MarketDetailPage({ params }: { params: Promise<{ id: str
     const filterTime = () => {
         const now = Date.now();
         switch (timeRange) {
+            case "1H": return now - 60 * 60 * 1000;
             case "1D": return now - 24 * 60 * 60 * 1000;
             case "1W": return now - 7 * 24 * 60 * 60 * 1000;
             case "1M": return now - 30 * 24 * 60 * 60 * 1000;
@@ -101,7 +102,7 @@ export default function MarketDetailPage({ params }: { params: Promise<{ id: str
     const chartData = (market.priceHistory || [])
         .filter((p) => new Date(p.timestamp).getTime() >= cutoffDate)
         .map((p) => ({
-            time: (new Date(p.timestamp).getTime() / 1000) as any, // Cast to any to satisfy lightweight-charts Time type 
+            time: Math.floor(new Date(p.timestamp).getTime() / 1000) as any, // Cast to any to satisfy lightweight-charts Time type 
             value: p.yesPrice,
         }));
 
@@ -128,10 +129,9 @@ export default function MarketDetailPage({ params }: { params: Promise<{ id: str
                 <div className="market-main">
                     <div className="market-header-section">
                         <div className="market-tags">
-                            <span className="market-tag">{categoryMap[market.category] || market.category}</span>
-                            <span className="market-tag tag-blue">Volume: ${formatVolume(market.volume)}</span>
+                            <span className="market-tag tag-blue cursor-default" style={{ cursor: 'default' }}>Volume: ${formatVolume(market.volume)}</span>
                             {market.tradersCount !== undefined && (
-                                <span className="market-tag" style={{ border: '1px solid var(--border)', background: 'transparent' }}>
+                                <span className="market-tag cursor-default" style={{ border: '1px solid var(--border)', background: 'transparent', cursor: 'default' }}>
                                     {market.tradersCount} Traders
                                 </span>
                             )}
@@ -173,7 +173,7 @@ export default function MarketDetailPage({ params }: { params: Promise<{ id: str
                                     }} />
                                 </span>
                                 <div className="chart-toggles">
-                                    {(["1D", "1W", "1M", "ALL"] as const).map((r) => (
+                                    {(["1H", "1D", "1W", "1M", "ALL"] as const).map((r) => (
                                         <button
                                             key={r}
                                             className={`toggle-btn ${timeRange === r ? "active" : ""}`}
@@ -207,17 +207,17 @@ export default function MarketDetailPage({ params }: { params: Promise<{ id: str
                             </div>
                             <div className="rule-item">
                                 <span className="rule-label">Oracle</span>
-                                <span className="rule-value flex-center gap-2">
+                                <a href={`https://explorer.qubetics.work/address/${market.oracle}`} target="_blank" rel="noopener noreferrer" className="rule-value flex-center gap-2" style={{ textDecoration: 'none', color: 'var(--text-primary)' }}>
                                     {market.oracle.substring(0, 10)}...
                                     <LinkIcon size={14} className="text-secondary" />
-                                </span>
+                                </a>
                             </div>
                             <div className="rule-item">
                                 <span className="rule-label">Contract</span>
-                                <span className="rule-value flex-center gap-2">
+                                <a href={`https://explorer.qubetics.work/address/${market.address}`} target="_blank" rel="noopener noreferrer" className="rule-value flex-center gap-2" style={{ textDecoration: 'none', color: 'var(--text-primary)' }}>
                                     {market.address.substring(0, 10)}...
                                     <LinkIcon size={14} className="text-secondary" />
-                                </span>
+                                </a>
                             </div>
                         </div>
                     </div>
