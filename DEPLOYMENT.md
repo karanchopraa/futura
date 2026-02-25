@@ -24,7 +24,7 @@ The Frontend is a Next.js application, perfectly suited for Netlify's serverless
 4. In the build settings, make sure:
    - **Base directory:** `Frontend`
    - **Build command:** `npm run build`
-   - **Publish directory:** `Frontend/.next`
+   - **Publish directory:** `.next` (Netlify will look for this relative to the base directory)
 5. Click **Add environment variables** and provide the following:
    - `NEXT_PUBLIC_API_URL` (Set this to the **Render Backend URL** generated in step 1, e.g., `https://futura-backend.onrender.com/api`)
    - `NEXT_PUBLIC_TOKEN_ADDRESS` (From testnet)
