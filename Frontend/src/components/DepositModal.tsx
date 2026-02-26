@@ -17,9 +17,19 @@ export default function DepositModal({ isOpen, onClose }: DepositModalProps) {
     const [txHash, setTxHash] = useState<string>("");
 
     if (!isOpen) return null;
-
     const numAmount = Number(amount) || 0;
     const presets = [50, 100, 250, 500];
+
+    const handleAmountChange = (val: string) => {
+        if (Number(val) < 0) return;
+
+        if (val.includes('.')) {
+            const parts = val.split('.');
+            if (parts[1].length > 2) return;
+        }
+
+        setAmount(val);
+    };
 
     const handleMint = async () => {
         if (numAmount <= 0) return;
@@ -79,7 +89,7 @@ export default function DepositModal({ isOpen, onClose }: DepositModalProps) {
                             <input
                                 type="number"
                                 value={amount}
-                                onChange={(e) => setAmount(e.target.value)}
+                                onChange={(e) => handleAmountChange(e.target.value)}
                                 placeholder="0.00"
                                 className="deposit-input"
                                 min="0"

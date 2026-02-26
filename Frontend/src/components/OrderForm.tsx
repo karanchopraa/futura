@@ -31,27 +31,40 @@ export default function OrderForm({ yesProb, noProb, marketAddress, tradingFee =
     useEffect(() => {
         if (!marketAddress) return;
 
-        const fetchBalances = async () => {
+        let isActive = true;
+
+        const fetchBalances = async (isBackgroundPoll = false) => {
             const addr = await getAddress();
             if (!addr) return;
 
-            setBalancesLoading(true);
+            if (!isBackgroundPoll) setBalancesLoading(true);
             try {
                 const [shares, tokenBal] = await Promise.all([
                     getUserShares(marketAddress, addr),
                     getTokenBalance(addr)
                 ]);
-                setUserYesShares(Number(shares.yesShares));
-                setUserNoShares(Number(shares.noShares));
-                setUserTokenBalance(Number(tokenBal));
+                if (isActive) {
+                    setUserYesShares(Number(shares.yesShares));
+                    setUserNoShares(Number(shares.noShares));
+                    setUserTokenBalance(Number(tokenBal));
+                }
             } catch (err) {
                 console.error("Failed to fetch balances:", err);
             } finally {
-                setBalancesLoading(false);
+                if (isActive && !isBackgroundPoll) setBalancesLoading(false);
             }
         };
 
-        fetchBalances();
+        fetchBalances(false);
+
+        const intervalId = setInterval(() => {
+            fetchBalances(true);
+        }, 5000);
+
+        return () => {
+            isActive = false;
+            clearInterval(intervalId);
+        };
     }, [mode, marketAddress, txStatus]);
 
     const price = outcome === "Yes" ? yesProb : noProb;
@@ -72,11 +85,37 @@ export default function OrderForm({ yesProb, noProb, marketAddress, tradingFee =
 
     const handleAmountChange = (val: string) => {
         if (Number(val) < 0) return;
+
+        // Prevent typing more than 2 decimal places
+        if (val.includes('.')) {
+            const parts = val.split('.');
+            if (parts[1].length > 2) return;
+        }
+
+        // Cap at user's max balance
+        if (Number(val) > userTokenBalance && userTokenBalance > 0) {
+            setAmount(userTokenBalance.toString());
+            return;
+        }
+
         setAmount(val);
     };
 
     const handleSellSharesChange = (val: string) => {
         if (Number(val) < 0) return;
+
+        // Prevent typing more than 2 decimal places
+        if (val.includes('.')) {
+            const parts = val.split('.');
+            if (parts[1].length > 2) return;
+        }
+
+        // Cap at max available shares
+        if (Number(val) > availableShares && availableShares > 0) {
+            setSellShares(availableShares.toString());
+            return;
+        }
+
         setSellShares(val);
     };
 
@@ -124,6 +163,22 @@ export default function OrderForm({ yesProb, noProb, marketAddress, tradingFee =
             setAmount("");
             setTxStatus("success");
             setTimeout(() => setTxStatus("idle"), 5000);
+
+            // Instantly refresh balances for snappier UI
+            setTimeout(async () => {
+                if (!address) return;
+                try {
+                    const [shares, tokenBal] = await Promise.all([
+                        getUserShares(marketAddress, address),
+                        getTokenBalance(address)
+                    ]);
+                    setUserYesShares(Number(shares.yesShares));
+                    setUserNoShares(Number(shares.noShares));
+                    setUserTokenBalance(Number(tokenBal));
+                } catch (e) {
+                    console.error("Failed to quick-refresh balances after trade", e);
+                }
+            }, 2000);
         } catch (error: any) {
             console.error("Trade failed:", error);
             const msg = error?.reason || error?.message || "Unknown error";
@@ -177,6 +232,22 @@ export default function OrderForm({ yesProb, noProb, marketAddress, tradingFee =
             setSellShares("");
             setTxStatus("success");
             setTimeout(() => setTxStatus("idle"), 5000);
+
+            // Instantly refresh balances for snappier UI
+            setTimeout(async () => {
+                if (!address) return;
+                try {
+                    const [shares, tokenBal] = await Promise.all([
+                        getUserShares(marketAddress, address),
+                        getTokenBalance(address)
+                    ]);
+                    setUserYesShares(Number(shares.yesShares));
+                    setUserNoShares(Number(shares.noShares));
+                    setUserTokenBalance(Number(tokenBal));
+                } catch (e) {
+                    console.error("Failed to quick-refresh balances after trade", e);
+                }
+            }, 2000);
         } catch (error: any) {
             console.error("Sell failed:", error);
             const msg = error?.reason || error?.message || "Unknown error";
@@ -400,7 +471,7 @@ export default function OrderForm({ yesProb, noProb, marketAddress, tradingFee =
                 disabled={
                     txStatus === "pending" ||
                     (mode === "sell" && (sellSharesNum <= 0 || sellSharesNum > availableShares)) ||
-                    (mode === "buy" && (inputAmount <= 0 || inputAmount > userTokenBalance))
+                    (mode === "buy" && (inputAmount < 1 || inputAmount > userTokenBalance))
                 }
                 style={{
                     opacity: txStatus === "pending" ? 0.7 : 1,

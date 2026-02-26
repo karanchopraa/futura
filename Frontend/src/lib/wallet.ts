@@ -24,6 +24,14 @@ export function isWalletAvailable(): boolean {
 
 export async function connectWallet(): Promise<string> {
     if (!isWalletAvailable()) {
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        if (isMobile) {
+            const currentUrl = window.location.href;
+            const dappUrl = currentUrl.replace(/^https?:\/\//, "");
+            window.location.href = `https://metamask.app.link/dapp/${dappUrl}`;
+            // Return empty string to prevent throwing, user is redirecting
+            return "";
+        }
         throw new Error("No wallet detected. Please install MetaMask.");
     }
 

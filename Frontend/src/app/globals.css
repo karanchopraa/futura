@@ -294,6 +294,12 @@ a {
   width: 100%;
 }
 
+@media (max-width: 480px) {
+  .market-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .market-card {
   padding: 1.25rem;
   display: flex;
@@ -451,12 +457,29 @@ a {
     display: none;
   }
 
+  .navbar {
+    flex-wrap: wrap;
+    height: auto;
+    padding: 1rem;
+    gap: 1rem;
+  }
+
   .navbar-categories {
-    display: none;
+    order: 3;
+    width: 100%;
+    margin-left: 0;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
   }
 
   .navbar-search-container {
-    display: none;
+    order: 4;
+    width: 100%;
+  }
+
+  .navbar-actions {
+    gap: 0.5rem;
   }
 }
 
@@ -860,6 +883,33 @@ a {
   font-size: 1.1rem;
   font-weight: 600;
   margin: 0;
+}
+
+.deposit-input-wrap {
+  display: flex;
+  align-items: center;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.deposit-input-wrap:focus-within {
+  border-color: var(--accent-blue);
+  box-shadow: 0 0 0 3px rgba(41, 105, 255, 0.15);
+}
+
+.deposit-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  padding: 0.8rem 0;
+  color: var(--text-primary);
+  font-size: 1.25rem;
+  font-weight: 600;
+  outline: none;
 }
 
 .chart-toggles {

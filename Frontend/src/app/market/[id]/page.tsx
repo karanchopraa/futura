@@ -99,12 +99,20 @@ export default function MarketDetailPage({ params }: { params: Promise<{ id: str
     const cutoffDate = filterTime();
 
     // Transform price history for the chart (Unix timestamp in seconds for intra-day support)
-    const chartData = (market.priceHistory || [])
+    const rawChartData = (market.priceHistory || [])
         .filter((p) => new Date(p.timestamp).getTime() >= cutoffDate)
         .map((p) => ({
             time: Math.floor(new Date(p.timestamp).getTime() / 1000) as any, // Cast to any to satisfy lightweight-charts Time type 
             value: p.yesPrice,
         }));
+
+    // Hack: If there's only 1 data point, duplicate it with a slightly older timestamp to draw a flat line
+    const chartData = rawChartData.length === 1
+        ? [
+            { time: (rawChartData[0].time as number) - 60 as any, value: rawChartData[0].value },
+            ...rawChartData
+        ]
+        : rawChartData;
 
     const categoryMap: Record<string, string> = {
         crypto: "Crypto",

@@ -79,6 +79,11 @@ export default function LightweightChart({ data, color }: LightweightChartProps)
 
         areaSeries.setData(cleanData);
 
+        // Ensure chart auto-zooms to fit newly filtered data points
+        setTimeout(() => {
+            chart.timeScale().fitContent();
+        }, 10);
+
         const handleResize = () => {
             chart.applyOptions({ width: chartContainerRef.current?.clientWidth });
         };

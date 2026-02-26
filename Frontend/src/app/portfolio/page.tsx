@@ -41,8 +41,8 @@ export default function PortfolioPage() {
         }
     }, []);
 
-    const loadData = async (addr: string) => {
-        setLoading(true);
+    const loadData = async (addr: string, isBackground = false) => {
+        if (!isBackground) setLoading(true);
         try {
             const [portfolioData, tradeData, claimData] = await Promise.all([
                 fetchPortfolio(addr),
@@ -55,7 +55,7 @@ export default function PortfolioPage() {
         } catch (error) {
             console.error("Failed to load portfolio:", error);
         } finally {
-            setLoading(false);
+            if (!isBackground) setLoading(false);
         }
     };
 
@@ -65,7 +65,14 @@ export default function PortfolioPage() {
             setLoading(false);
             return;
         }
-        loadData(walletAddress);
+
+        loadData(walletAddress, false);
+
+        const intervalId = setInterval(() => {
+            loadData(walletAddress, true);
+        }, 5000);
+
+        return () => clearInterval(intervalId);
     }, [walletAddress]);
 
     const handleConnect = async () => {
@@ -116,8 +123,10 @@ export default function PortfolioPage() {
 
             showToast(`✓ Sold ${position.shares} ${position.outcome} shares successfully!`, "success");
 
-            // Refresh portfolio data
-            await loadData(walletAddress);
+            // Wait 2 seconds for backend indexer to process event before fetching updated data
+            setTimeout(async () => {
+                await loadData(walletAddress);
+            }, 2000);
         } catch (error: any) {
             console.error("Sell failed:", error);
             const msg = error?.reason || error?.message || "Unknown error";
