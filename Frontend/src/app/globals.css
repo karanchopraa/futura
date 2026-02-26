@@ -738,7 +738,34 @@ a {
 }
 
 .currency-input {
+  display: flex;
+  align-items: center;
   background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+.currency-input:focus-within {
+  border-color: var(--accent-yes);
+  box-shadow: 0 0 0 4px rgba(41, 98, 255, 0.15), 0 0 15px rgba(41, 98, 255, 0.1);
+  transform: scale(1.01);
+}
+
+.currency-input input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text-primary);
+  font-size: 1.25rem;
+  font-weight: 600;
+  padding: 0.8rem;
+}
+
+.currency-input input::placeholder {
+  color: var(--border);
 }
 
 .conversion-details {
@@ -1698,12 +1725,14 @@ a {
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   padding: 0;
-  transition: border-color 0.2s;
+  overflow: hidden;
+  transition: all 0.2s ease;
 }
 
 .deposit-input-wrap:focus-within {
   border-color: var(--accent-yes);
-  box-shadow: 0 0 0 3px rgba(33, 81, 245, 0.1);
+  box-shadow: 0 0 0 4px rgba(41, 98, 255, 0.15), 0 0 15px rgba(41, 98, 255, 0.1);
+  transform: scale(1.01);
 }
 
 .deposit-currency-icon {
@@ -2239,5 +2268,36 @@ a {
 @keyframes spin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+/* Extreme Mobile (max-width: 480px) layout overrides */
+@media (max-width: 480px) {
+  .navbar-categories {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+
+  .nav-link {
+    font-size: 0.85rem;
+    padding: 0.2rem 0;
+  }
+
+  .orderbook-container {
+    padding: 0.75rem;
+    overflow-x: auto;
+  }
+
+  .market-layout {
+    padding: 1rem;
+  }
+
+  .market-header h1 {
+    font-size: 1.5rem;
+  }
+
+  .featured-market {
+    padding: 1rem;
   }
 }

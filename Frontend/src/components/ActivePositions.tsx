@@ -40,12 +40,12 @@ export default function ActivePositions({ positions, loading, onSellToClose }: A
             <h2 className="portfolio-card-title">Active Positions</h2>
 
             <div className="position-list">
-                {positions.length === 0 ? (
+                {positions.filter(p => safeNumber(p.shares) > 0).length === 0 ? (
                     <div style={{ padding: "2rem", textAlign: "center", color: "var(--text-secondary)" }}>
                         No active positions. Start trading to see your positions here.
                     </div>
                 ) : (
-                    positions.map((pos) => {
+                    positions.filter(p => safeNumber(p.shares) > 0).map((pos) => {
                         const isSelling = sellingId === pos.id;
                         return (
                             <div className="position-item" key={pos.id}>

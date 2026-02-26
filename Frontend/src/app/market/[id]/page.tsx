@@ -215,14 +215,14 @@ export default function MarketDetailPage({ params }: { params: Promise<{ id: str
                             </div>
                             <div className="rule-item">
                                 <span className="rule-label">Oracle</span>
-                                <a href={`https://explorer.qubetics.work/address/${market.oracle}`} target="_blank" rel="noopener noreferrer" className="rule-value flex-center gap-2" style={{ textDecoration: 'none', color: 'var(--text-primary)' }}>
+                                <a href={`https://explorer.qubetics.network/token/${market.oracle}`} target="_blank" rel="noopener noreferrer" className="rule-value flex-center gap-2" style={{ textDecoration: 'none', color: 'var(--text-primary)' }}>
                                     {market.oracle.substring(0, 10)}...
                                     <LinkIcon size={14} className="text-secondary" />
                                 </a>
                             </div>
                             <div className="rule-item">
                                 <span className="rule-label">Contract</span>
-                                <a href={`https://explorer.qubetics.work/address/${market.address}`} target="_blank" rel="noopener noreferrer" className="rule-value flex-center gap-2" style={{ textDecoration: 'none', color: 'var(--text-primary)' }}>
+                                <a href={`https://explorer.qubetics.network/token/${market.address}`} target="_blank" rel="noopener noreferrer" className="rule-value flex-center gap-2" style={{ textDecoration: 'none', color: 'var(--text-primary)' }}>
                                     {market.address.substring(0, 10)}...
                                     <LinkIcon size={14} className="text-secondary" />
                                 </a>

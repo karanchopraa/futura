@@ -471,7 +471,7 @@ export default function OrderForm({ yesProb, noProb, marketAddress, tradingFee =
                 disabled={
                     txStatus === "pending" ||
                     (mode === "sell" && (sellSharesNum <= 0 || sellSharesNum > availableShares)) ||
-                    (mode === "buy" && (inputAmount < 1 || inputAmount > userTokenBalance))
+                    (mode === "buy" && (inputAmount < 0.01 || inputAmount > userTokenBalance))
                 }
                 style={{
                     opacity: txStatus === "pending" ? 0.7 : 1,

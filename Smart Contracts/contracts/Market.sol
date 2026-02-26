@@ -227,7 +227,14 @@ contract Market {
         uint256 k = yesPool * noPool;
         uint256 newNoPool = noPool + shares;
         uint256 newYesPool = k / newNoPool;
+        
+        // Payout is the amount of tUSDC removed from the Yes pool
         uint256 payout = yesPool - newYesPool;
+
+        // Apply trading fee to the payout
+        uint256 fee = (payout * tradingFee) / 10000;
+        uint256 payoutAfterFee = payout - fee;
+        feePool += fee;
 
         require(newYesPool >= MIN_POOL_SIZE, "Sell too large: pool drain");
 
@@ -236,14 +243,14 @@ contract Market {
         yesShares[msg.sender] -= shares;
         totalSharesIssued -= shares;
 
-        token.safeTransfer(msg.sender, payout);
+        token.safeTransfer(msg.sender, payoutAfterFee);
 
         emit SharesSold(
-            msg.sender, true, shares, payout,
+            msg.sender, true, shares, payoutAfterFee,
             getYesPrice(), getNoPrice()
         );
 
-        return payout;
+        return payoutAfterFee;
     }
 
     /**
@@ -255,7 +262,13 @@ contract Market {
         uint256 k = yesPool * noPool;
         uint256 newYesPool = yesPool + shares;
         uint256 newNoPool = k / newYesPool;
+        
         uint256 payout = noPool - newNoPool;
+
+        // Apply trading fee to the payout
+        uint256 fee = (payout * tradingFee) / 10000;
+        uint256 payoutAfterFee = payout - fee;
+        feePool += fee;
 
         require(newNoPool >= MIN_POOL_SIZE, "Sell too large: pool drain");
 
@@ -264,14 +277,14 @@ contract Market {
         noShares[msg.sender] -= shares;
         totalSharesIssued -= shares;
 
-        token.safeTransfer(msg.sender, payout);
+        token.safeTransfer(msg.sender, payoutAfterFee);
 
         emit SharesSold(
-            msg.sender, false, shares, payout,
+            msg.sender, false, shares, payoutAfterFee,
             getYesPrice(), getNoPrice()
         );
 
-        return payout;
+        return payoutAfterFee;
     }
 
     // --- Resolution ---
