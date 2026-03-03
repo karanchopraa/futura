@@ -148,7 +148,7 @@ export default function DepositModal({ isOpen, onClose }: DepositModalProps) {
                     {status === "success" && txHash && (
                         <div style={{ textAlign: "center", fontSize: "0.75rem", marginTop: "0.5rem" }}>
                             <a
-                                href={`https://explorer.qubetics.work/tx/${txHash}`}
+                                href={`https://testnetv2.qubetics.work/tx/${txHash}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 style={{ color: "var(--accent-blue)", textDecoration: "underline" }}

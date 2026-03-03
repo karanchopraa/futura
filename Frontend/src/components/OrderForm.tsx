@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { connectWallet, getAddress, isWalletAvailable } from "@/lib/wallet";
 import { buyYesShares, buyNoShares, sellYesShares, sellNoShares, getUserShares, getTokenBalance } from "@/lib/contracts";
 import { showToast } from "@/components/Toast";
+import { broadcastTradeEvent, onTradeEvent } from "@/lib/crossTabSync";
 
 interface OrderFormProps {
     yesProb: number;
@@ -61,9 +62,15 @@ export default function OrderForm({ yesProb, noProb, marketAddress, tradingFee =
             fetchBalances(true);
         }, 5000);
 
+        // Listen for cross-tab trade events
+        const cleanupCrossTab = onTradeEvent(() => {
+            fetchBalances(true);
+        });
+
         return () => {
             isActive = false;
             clearInterval(intervalId);
+            cleanupCrossTab();
         };
     }, [mode, marketAddress, txStatus]);
 
@@ -162,6 +169,7 @@ export default function OrderForm({ yesProb, noProb, marketAddress, tradingFee =
 
             setAmount("");
             setTxStatus("success");
+            broadcastTradeEvent();
             setTimeout(() => setTxStatus("idle"), 5000);
 
             // Instantly refresh balances for snappier UI
@@ -231,6 +239,7 @@ export default function OrderForm({ yesProb, noProb, marketAddress, tradingFee =
 
             setSellShares("");
             setTxStatus("success");
+            broadcastTradeEvent();
             setTimeout(() => setTxStatus("idle"), 5000);
 
             // Instantly refresh balances for snappier UI
@@ -488,7 +497,7 @@ export default function OrderForm({ yesProb, noProb, marketAddress, tradingFee =
             {txStatus === "success" && txHash && (
                 <div style={{ marginTop: "0.5rem", textAlign: "center", fontSize: "0.75rem" }}>
                     <a
-                        href={`https://explorer.qubetics.work/tx/${txHash}`}
+                        href={`https://testnetv2.qubetics.work/tx/${txHash}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         style={{ color: "var(--accent-blue)", textDecoration: "underline" }}

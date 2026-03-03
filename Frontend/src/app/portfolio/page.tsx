@@ -10,6 +10,7 @@ import { fetchPortfolio, fetchTradeHistory, fetchClaimable, safeNumber, type Por
 import { getAddress, connectWallet, isWalletAvailable } from "@/lib/wallet";
 import { sellYesShares, sellNoShares } from "@/lib/contracts";
 import { showToast } from "@/components/Toast";
+import { onTradeEvent } from "@/lib/crossTabSync";
 
 export default function PortfolioPage() {
     const [walletAddress, setWalletAddress] = useState<string | null>(null);
@@ -72,7 +73,15 @@ export default function PortfolioPage() {
             loadData(walletAddress, true);
         }, 5000);
 
-        return () => clearInterval(intervalId);
+        // Listen for cross-tab trade events
+        const cleanupCrossTab = onTradeEvent(() => {
+            loadData(walletAddress, true);
+        });
+
+        return () => {
+            clearInterval(intervalId);
+            cleanupCrossTab();
+        };
     }, [walletAddress]);
 
     const handleConnect = async () => {
@@ -92,8 +101,14 @@ export default function PortfolioPage() {
 
         try {
             let txHash: string;
-            // Truncate float to max 6 decimals to prevent parseUnits error in contracts
-            const safeShares = Math.floor(position.shares * 1e6) / 1e6;
+            // Ensure shares is a number and truncate to max 6 decimals to prevent parseUnits overflow
+            const rawShares = Number(position.shares);
+            if (isNaN(rawShares) || rawShares <= 0) {
+                showToast("Invalid share amount.", "error");
+                return;
+            }
+            // Truncate (not round) to 6 decimal places to never exceed on-chain balance
+            const safeShares = Math.floor(rawShares * 1e6) / 1e6;
 
             if (position.outcome === "YES") {
                 txHash = await sellYesShares(position.market.address, safeShares);
@@ -111,9 +126,9 @@ export default function PortfolioPage() {
                         marketAddress: position.market.address,
                         userAddress: walletAddress,
                         action: position.outcome === "YES" ? "SELL_YES" : "SELL_NO",
-                        shares: position.shares,
+                        shares: safeShares,
                         price: position.outcome === "YES" ? position.market.yesPrice : position.market.noPrice,
-                        amount: position.currentValue,
+                        amount: safeShares * ((position.outcome === "YES" ? position.market.yesPrice : position.market.noPrice) / 100),
                         txHash,
                     }),
                 });
@@ -121,12 +136,21 @@ export default function PortfolioPage() {
                 console.warn("Failed to record sell trade in backend:", apiErr);
             }
 
-            showToast(`✓ Sold ${position.shares} ${position.outcome} shares successfully!`, "success");
+            showToast(`✓ Sold ${safeShares} ${position.outcome} shares successfully!`, "success");
 
-            // Wait 2 seconds for backend indexer to process event before fetching updated data
+            // Broadcast to other tabs
+            if (typeof BroadcastChannel !== "undefined") {
+                try {
+                    const channel = new BroadcastChannel("futura_trades");
+                    channel.postMessage({ type: "TRADE_COMPLETED", timestamp: Date.now() });
+                    channel.close();
+                } catch (_) { }
+            }
+
+            // Wait 3 seconds for backend indexer to process event before fetching updated data
             setTimeout(async () => {
                 await loadData(walletAddress);
-            }, 2000);
+            }, 3000);
         } catch (error: any) {
             console.error("Sell failed:", error);
             const msg = error?.reason || error?.message || "Unknown error";

@@ -15,7 +15,7 @@ const QUBETICS_CHAIN = {
         symbol: "TICS",
         decimals: 18,
     },
-    blockExplorerUrls: ["https://explorer.qubetics.work"],
+    blockExplorerUrls: ["https://testnetv2.qubetics.work"],
 };
 
 export function isWalletAvailable(): boolean {

@@ -59,7 +59,7 @@ export default function TransactionHistory({ trades, loading }: TransactionHisto
 
     const shortenHash = (hash: string) => `${hash.substring(0, 6)}...${hash.substring(hash.length - 4)}`;
 
-    const explorerBaseUrl = "https://explorer.qubetics.work/tx/";
+    const explorerBaseUrl = "https://testnetv2.qubetics.work/tx/";
 
     return (
         <div className="portfolio-card glass-panel">

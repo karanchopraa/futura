@@ -43,17 +43,19 @@ router.post("/", async (req: Request, res: Response) => {
         const outcome = action.includes("YES") ? "YES" : "NO";
         const isBuy = action.startsWith("BUY");
 
-        const existingPosition = await prisma.position.findUnique({
-            where: {
-                marketId_userAddress_outcome: {
-                    marketId: market.id,
-                    userAddress: userAddress.toLowerCase(),
-                    outcome,
-                },
-            },
-        });
-
         if (isBuy) {
+            // For BUY trades, update position eagerly for faster UX.
+            // The indexer will skip due to duplicate txHash (P2002).
+            const existingPosition = await prisma.position.findUnique({
+                where: {
+                    marketId_userAddress_outcome: {
+                        marketId: market.id,
+                        userAddress: userAddress.toLowerCase(),
+                        outcome,
+                    },
+                },
+            });
+
             if (existingPosition) {
                 // Weighted average price
                 const totalShares = existingPosition.shares + shares;
@@ -79,22 +81,11 @@ router.post("/", async (req: Request, res: Response) => {
                     },
                 });
             }
-        } else {
-            // Sell - reduce shares
-            if (existingPosition) {
-                const newShares = existingPosition.shares - shares;
-                if (newShares <= 0) {
-                    await prisma.position.delete({
-                        where: { id: existingPosition.id },
-                    });
-                } else {
-                    await prisma.position.update({
-                        where: { id: existingPosition.id },
-                        data: { shares: newShares },
-                    });
-                }
-            }
         }
+        // For SELL trades, do NOT mutate positions here.
+        // The backend indexer's SharesSold event listener handles position
+        // deduction with accurate on-chain data, preventing double-deduction
+        // and ensuring the correct payout values are used.
 
         // Update market volume
         await prisma.market.update({

@@ -11,6 +11,7 @@ import { fetchMarket, type Market, formatVolume } from "@/lib/api";
 import { showToast } from "@/components/Toast";
 import { getAddress, connectWallet } from "@/lib/wallet";
 import { getUserShares } from "@/lib/contracts";
+import { onTradeEvent } from "@/lib/crossTabSync";
 
 export default function MarketDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params);
@@ -54,7 +55,16 @@ export default function MarketDetailPage({ params }: { params: Promise<{ id: str
     // Auto-refresh every 15 seconds for live chart + price updates
     useEffect(() => {
         const interval = setInterval(loadMarket, 15_000);
-        return () => clearInterval(interval);
+
+        // Listen for cross-tab trade events
+        const cleanupCrossTab = onTradeEvent(() => {
+            loadMarket();
+        });
+
+        return () => {
+            clearInterval(interval);
+            cleanupCrossTab();
+        };
     }, [loadMarket]);
 
     if (loading) {
@@ -215,14 +225,14 @@ export default function MarketDetailPage({ params }: { params: Promise<{ id: str
                             </div>
                             <div className="rule-item">
                                 <span className="rule-label">Oracle</span>
-                                <a href={`https://explorer.qubetics.network/token/${market.oracle}`} target="_blank" rel="noopener noreferrer" className="rule-value flex-center gap-2" style={{ textDecoration: 'none', color: 'var(--text-primary)' }}>
+                                <a href={`https://testnetv2.qubetics.work/address/${market.oracle}`} target="_blank" rel="noopener noreferrer" className="rule-value flex-center gap-2" style={{ textDecoration: 'none', color: 'var(--text-primary)' }}>
                                     {market.oracle.substring(0, 10)}...
                                     <LinkIcon size={14} className="text-secondary" />
                                 </a>
                             </div>
                             <div className="rule-item">
                                 <span className="rule-label">Contract</span>
-                                <a href={`https://explorer.qubetics.network/token/${market.address}`} target="_blank" rel="noopener noreferrer" className="rule-value flex-center gap-2" style={{ textDecoration: 'none', color: 'var(--text-primary)' }}>
+                                <a href={`https://testnetv2.qubetics.work/address/${market.address}`} target="_blank" rel="noopener noreferrer" className="rule-value flex-center gap-2" style={{ textDecoration: 'none', color: 'var(--text-primary)' }}>
                                     {market.address.substring(0, 10)}...
                                     <LinkIcon size={14} className="text-secondary" />
                                 </a>
